@@ -44,19 +44,21 @@
                 let password = document.querySelector('input[name=password]').value;
                 let response = await fetch("/login",{
                     method: "POST",
-                    headers: {"Content-Type": "application/json"},
+                    headers: {'Content-Type': 'application/json'},
                     body: `{"username": "${username}", "password": "${password}"}`
-                    })
-                })
+                });
+
                 let response_json = await response.json();
                 if (response_json.success){
                     let body = document.querySelector('body');
                     body.style.backgroundColor = "white";
+                    body.style.padding = "8px";
                     body.style.display = "block";
                     body.innerHTML = response_json.message;
                 }
             })
         })
+
 
     </script>
 

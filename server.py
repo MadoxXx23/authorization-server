@@ -82,8 +82,8 @@ def index_page(username: Optional[str] = Cookie(default=None)):
 @app.post("/login")
 def process_login_page(data: dict = Body(...)):
     print(data)
-    # username = data.split('&')[0].split('=')[1]
-    # password = data.split('&')[1].split('=')[1]
+    username = data['username']
+    password = data['password']
 
     user = users.get(username)
 

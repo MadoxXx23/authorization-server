@@ -1,15 +1,17 @@
 #testing comment
-
+import re
 import hmac
 import hashlib
 import base64
 import binascii
 import json
 
+
+
 from fastapi import FastAPI, Cookie, Body, Form
 from fastapi.responses import Response
 from typing import Optional
-
+from schemas import Phone
 
 app = FastAPI()
 
@@ -55,6 +57,8 @@ def get_username_from_signed_string(username_signed: str) -> Optional[str]:
         return username
     else:
         return None
+
+
 
 
 @app.get("/")
@@ -103,3 +107,19 @@ def process_login_page(data: dict = Body(...)):
     response.set_cookie(key="username", value=username_signed)
 
     return response
+
+
+@app.post("/unify_phone_from_json")
+def unify_phone_from_json(json_number_phone: dict) -> dict:
+    number_phone = json_number_phone["phone"]
+    
+    digits = ''.join(re.findall(r'\d+', number_phone))
+    digits = re.sub(r'^7', '8', digits)
+    if digits[0] == '9':
+        digits = '8'+digits
+    list_number = ['7', '8', '9']
+    if digits[0] not in list_number:
+        return digits
+    else:
+        return f'{digits[0]} ({digits[1:4]}) {digits[4:7]}-{digits[7:9]}-{digits[9:11]}'
+    

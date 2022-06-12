@@ -1,0 +1,8 @@
+.env
+.idea
+env
+__pycache__
+debug.log
+test.py
+docker-compose.yml
+Dockerfile

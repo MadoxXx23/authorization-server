@@ -1,4 +1,3 @@
-#testing comment
 import re
 import hmac
 import hashlib
@@ -7,13 +6,21 @@ import binascii
 import json
 
 
-
-from fastapi import FastAPI, Cookie, Body, Form
+from loguru import logger
+from fastapi import FastAPI, Cookie, Body
 from fastapi.responses import Response
 from typing import Optional
-from schemas import Phone
+
+import os
+from dotenv import load_dotenv
+
+
+dotenv_path = os.path.join(os.path.dirname(__file__), '.env')
+if os.path.exists(dotenv_path):
+    load_dotenv(dotenv_path)
 
 app = FastAPI()
+
 
 users = {
     "one@mail.ru" : {
@@ -28,15 +35,20 @@ users = {
         "balance": 765432
     },
 }
-SECRET_KEY = "540f25f580c26cd9b0e44661e686f25e13c14b99f263866bf683b3d7f77d1f09"
-PASSWORD_SALT = "459b96ba8588a43786673d75884d1f71163504c9a3e1bcb2895fbe97f471871a"
+
+#add autorization form SECRET_KEY and PASSWORD_SALT
+SECRET_KEY = os.environ['SECRET_KEY']
+PASSWORD_SALT = os.environ['PASSWORD_SALT']
 
 
+#data verification check
 def verify_password(username: str, password: str) -> bool:
     password_hash = hashlib.sha256((password + PASSWORD_SALT).encode()).hexdigest().lower()
     stored_password_hash = users[username]['password']
     return  password_hash == stored_password_hash
 
+
+#data signature
 def sign_data(data: str) -> str:
     return hmac.new(
         SECRET_KEY.encode(),
@@ -44,6 +56,7 @@ def sign_data(data: str) -> str:
         digestmod=hashlib.sha256
     ).hexdigest().upper()
 
+#getting username from signed string
 def get_username_from_signed_string(username_signed: str) -> Optional[str]:
     if "." not in username_signed:
         return None
@@ -57,8 +70,6 @@ def get_username_from_signed_string(username_signed: str) -> Optional[str]:
         return username
     else:
         return None
-
-
 
 
 @app.get("/")
@@ -109,17 +120,19 @@ def process_login_page(data: dict = Body(...)):
     return response
 
 
-@app.post("/unify_phone_from_json")
-def unify_phone_from_json(json_number_phone: dict) -> dict:
-    number_phone = json_number_phone["phone"]
+@app.get("/unify_phone_from_cookies")
+def unify_phone_from_json(phone: Optional[str] = Cookie(default=None)):
+    
+    number_phone = phone
     
     digits = ''.join(re.findall(r'\d+', number_phone))
     digits = re.sub(r'^7', '8', digits)
     if digits[0] == '9':
         digits = '8'+digits
     list_number = ['7', '8', '9']
-    if digits[0] not in list_number:
+    if digits[0] not in list_number or len(digits)>11:
+        logger.info("Run first condition")
         return digits
     else:
-        return f'{digits[0]} ({digits[1:4]}) {digits[4:7]}-{digits[7:9]}-{digits[9:11]}'
+        return Response(f"{digits[0]} ({digits[1:4]}) {digits[4:7]}-{digits[7:9]}-{digits[9:11]}", media_type="application/json")
     
